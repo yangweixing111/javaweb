@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.flight.mapper.OrderMapper">
+    <!-- 根据用户名查询订单 -->
+    <select id="selectByUsername" resultType="com.flight.model.Order">
+        SELECT * FROM `order` WHERE username = #{username} ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据航班ID查询订单 -->
+    <select id="selectByFlightId" resultType="com.flight.model.Order">
+        SELECT * FROM `order` WHERE flight_id = #{flightId} ORDER BY create_time DESC
+    </select>
+</mapper>

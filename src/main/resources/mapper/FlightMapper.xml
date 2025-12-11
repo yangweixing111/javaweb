@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.flight.mapper.FlightMapper">
+    <!-- 根据城市搜索航班 -->
+    <select id="searchByCity" resultType="com.flight.model.Flight">
+        SELECT * FROM flight
+        WHERE departure_city LIKE CONCAT('%', #{keyword}, '%')
+           OR arrival_city LIKE CONCAT('%', #{keyword}, '%')
+    </select>
+
+    <!-- 更新航班座位数 -->
+    <update id="updateSeats">
+        UPDATE flight SET seats = #{newSeats} WHERE flight_id = #{flightId}
+    </update>
+</mapper>

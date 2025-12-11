@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/flightmanagement?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root  # 替换为你的MySQL用户名
+    password: 123456  # 替换为你的MySQL密码
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  # Spring Security 临时关闭（方便测试，生产需开启）
+  security:
+    user:
+      name: admin
+      password: admin123
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml  # Mapper XML路径
+  type-aliases-package: com.flight.model    # 实体类包路径
+  configuration:
+    map-underscore-to-camel-case: true     # 下划线转驼峰
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # SQL日志打印
+
+server:
+  port: 8080  # 项目端口
+  servlet:
+    context-path: /flight  # 上下文路径
+
+# JWT 自定义配置
+jwt:
+  secret: flight_system_secret_key_2025  # 密钥（生产需替换为复杂密钥）
+  expire: 3600000  # 过期时间（1小时，单位：毫秒）
