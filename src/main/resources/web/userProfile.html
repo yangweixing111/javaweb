@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 - 航班管理系统</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="header">
+    <div class="container">
+        <a href="/userHome.html" class="logo">航班管理系统</a>
+        <div class="nav">
+            <a href="/BookHome.html">查询航班</a>
+            <a href="/userOrders.html">我的订单</a>
+            <a href="/userProfile.html">个人中心</a>
+            <a href="/logout.html">退出登录</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="form-container" style="max-width: 600px;">
+        <h2 class="form-title">个人信息</h2>
+        <div id="msg" class="msg" style="display: none;"></div>
+        <div id="error" class="error" style="display: none;"></div>
+
+        <form id="profileForm" onsubmit="updateProfile(event)">
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" name="username" class="form-control" readonly>
+            </div>
+            <div class="form-group">
+                <label for="realName">真实姓名</label>
+                <input type="text" id="realName" name="realName" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="idCard">身份证号</label>
+                <input type="text" id="idCard" name="idCard" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="phone">手机号</label>
+                <input type="tel" id="phone" name="phone" class="form-control" required>
+            </div>
+            <div class="form-group" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
+                <label for="oldPwd">原密码（修改密码时必填）</label>
+                <input type="password" id="oldPwd" name="oldPwd" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="newPwd">新密码（不填则不修改）</label>
+                <input type="password" id="newPwd" name="newPwd" class="form-control">
+            </div>
+            <button type="submit" class="btn" style="width: 100%;">保存修改</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // 页面加载获取用户信息
+    window.onload = function() {
+        // 这里默认取URL参数中的用户名，实际项目可从JWT令牌解析
+        const username = getUrlParam('username') || prompt('请输入您的用户名');
+        if (!username) {
+            window.location.href = '/login.html';
+            return;
+        }
+
+        // 填充用户名
+        document.getElementById('username').value = username;
+
+        // 获取用户信息
+        fetch(`/api/user/${username}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 200) {
+                    document.getElementById('realName').value = data.data.realName || '';
+                    document.getElementById('idCard').value = data.data.idCard || '';
+                    document.getElementById('phone').value = data.data.phone || '';
+                } else {
+                    document.getElementById('error').textContent = '获取用户信息失败';
+                    document.getElementById('error').style.display = 'block';
+                }
+            })
+            .catch(err => {
+                document.getElementById('error').textContent = '网络错误，请重试';
+                document.getElementById('error').style.display = 'block';
+            });
+    }
+
+    // 获取URL参数
+    function getUrlParam(name) {
+        const reg = new RegExp(`(^|&)${name}=([^&]*)(&|$)`);
+        const r = window.location.search.substr(1).match(reg);
+        if (r != null) return decodeURIComponent(r[2]);
+        return null;
+    }
+
+    // 更新个人信息
+    function updateProfile(e) {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const realName = document.getElementById('realName').value;
+        const idCard = document.getElementById('idCard').value;
+        const phone = document.getElementById('phone').value;
+        const oldPwd = document.getElementById('oldPwd').value;
+        const newPwd = document.getElementById('newPwd').value;
+
+        // 构建更新数据
+        const userData = {
+            username: username,
+            realName: realName,
+            idCard: idCard,
+            phone: phone
+        };
+
+        // 如果填写了密码，添加密码字段
+        if (oldPwd && newPwd) {
+            userData.oldPassword = oldPwd;
+            userData.newPassword = newPwd;
+        } else if ((oldPwd && !newPwd) || (!oldPwd && newPwd)) {
+            document.getElementById('error').textContent = '修改密码时原密码和新密码都必填';
+            document.getElementById('error').style.display = 'block';
+            return;
+        }
+
+        fetch(`/api/user/${username}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 200) {
+                    document.getElementById('msg').textContent = data.message;
+                    document.getElementById('msg').style.display = 'block';
+                    document.getElementById('error').style.display = 'none';
+                    // 清空密码框
+                    document.getElementById('oldPwd').value = '';
+                    document.getElementById('newPwd').value = '';
+                } else {
+                    document.getElementById('error').textContent = data.message;
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('msg').style.display = 'none';
+                }
+            })
+            .catch(err => {
+                document.getElementById('error').textContent = '更新失败，请重试';
+                document.getElementById('error').style.display = 'block';
+            });
+    }
+</script>
+</body>
+</html>

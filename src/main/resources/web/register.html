@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户注册 - 航班管理系统</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="header">
+    <div class="container">
+        <a href="/" class="logo">航班管理系统</a>
+        <div class="nav">
+            <a href="/login.html">登录</a>
+            <a href="/adminlogin.html">管理员登录</a>
+        </div>
+    </div>
+</div>
+
+<div class="form-container">
+    <h2 class="form-title">用户注册</h2>
+    <div id="msg" class="msg" style="display: none;"></div>
+    <div id="errorMsg" class="error" style="display: none;"></div>
+    <form id="registerForm" onsubmit="register(event)">
+        <div class="form-group">
+            <label for="username">用户名</label>
+            <input type="text" id="username" name="username" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="password">密码</label>
+            <input type="password" id="password" name="password" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="realName">真实姓名</label>
+            <input type="text" id="realName" name="realName" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="idCard">身份证号</label>
+            <input type="text" id="idCard" name="idCard" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="phone">手机号</label>
+            <input type="tel" id="phone" name="phone" class="form-control" required>
+        </div>
+        <button type="submit" class="btn" style="width: 100%;">注册</button>
+    </form>
+    <p style="margin-top: 15px; text-align: center;">
+        已有账号？<a href="/login.html">立即登录</a>
+    </p>
+</div>
+
+<script>
+    // 注册请求
+    function register(e) {
+        e.preventDefault();
+        const user = {
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value,
+            realName: document.getElementById('realName').value,
+            idCard: document.getElementById('idCard').value,
+            phone: document.getElementById('phone').value
+        };
+
+        fetch('/api/user/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(user)
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 200) {
+                    document.getElementById('msg').textContent = data.message;
+                    document.getElementById('msg').style.display = 'block';
+                    document.getElementById('errorMsg').style.display = 'none';
+                    // 3秒后跳转到登录页
+                    setTimeout(() => window.location.href = '/login.html', 3000);
+                } else {
+                    document.getElementById('errorMsg').textContent = data.message;
+                    document.getElementById('errorMsg').style.display = 'block';
+                    document.getElementById('msg').style.display = 'none';
+                }
+            })
+            .catch(err => {
+                document.getElementById('errorMsg').textContent = '注册失败，请重试';
+                document.getElementById('errorMsg').style.display = 'block';
+            });
+    }
+</script>
+</body>
+</html>

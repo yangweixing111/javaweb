@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员主页 - 航班管理系统</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="header">
+    <div class="container">
+        <a href="/adminHome.html" class="logo">航班管理系统</a>
+        <div class="nav">
+            <a href="/flight.html">航班管理</a>
+            <a href="/orderManage.html">订单管理</a>
+            <a href="/userInfoList.html">用户管理</a>
+            <a href="/logout.html">退出登录</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <h2 class="card-title">管理员控制台</h2>
+        <p>您可以通过以下功能管理系统数据：</p>
+        <div style="display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap;">
+            <a href="/flight.html" class="btn" style="text-decoration: none;">
+                <i></i> 航班管理
+            </a>
+            <a href="/orderManage.html" class="btn" style="text-decoration: none;">
+                <i></i> 订单管理
+            </a>
+            <a href="/userInfoList.html" class="btn" style="text-decoration: none;">
+                <i></i> 用户管理
+            </a>
+        </div>
+    </div>
+
+    <!-- 数据统计卡片 -->
+    <div style="display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap;">
+        <div class="card" style="flex: 1; min-width: 250px;">
+            <h3 class="card-title">航班总数</h3>
+            <div id="flightCount" style="font-size: 36px; font-weight: bold; color: #1a73e8; text-align: center; margin-top: 10px;">0</div>
+        </div>
+        <div class="card" style="flex: 1; min-width: 250px;">
+            <h3 class="card-title">订单总数</h3>
+            <div id="orderCount" style="font-size: 36px; font-weight: bold; color: #28a745; text-align: center; margin-top: 10px;">0</div>
+        </div>
+        <div class="card" style="flex: 1; min-width: 250px;">
+            <h3 class="card-title">用户总数</h3>
+            <div id="userCount" style="font-size: 36px; font-weight: bold; color: #ffc107; text-align: center; margin-top: 10px;">0</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 加载统计数据
+    window.onload = function() {
+        // 加载航班数
+        fetch('/api/flights')
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 200) {
+                    document.getElementById('flightCount').textContent = data.data.length;
+                }
+            });
+
+        // 加载订单数
+        fetch('/api/admin/orders')
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 200) {
+                    document.getElementById('orderCount').textContent = data.data.length;
+                }
+            });
+
+        // 加载用户数
+        fetch('/api/admin/users')
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 200) {
+                    document.getElementById('userCount').textContent = data.data.length;
+                }
+            });
+    }
+</script>
+</body>
+</html>

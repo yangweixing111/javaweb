@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户主页 - 航班管理系统</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="header">
+    <div class="container">
+        <a href="/userHome.html" class="logo">航班管理系统</a>
+        <div class="nav">
+            <a href="/BookHome.html">查询航班</a>
+            <a href="/userOrders.html">我的订单</a>
+            <a href="/userProfile.html">个人中心</a>
+            <a href="/logout.html">退出登录</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <h2 class="card-title">欢迎使用航班管理系统</h2>
+        <p>您可以通过以下功能管理您的航班服务：</p>
+        <div style="display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap;">
+            <a href="/BookHome.html" class="btn" style="text-decoration: none;">
+                <i></i> 查询并预订航班
+            </a>
+            <a href="/userOrders.html" class="btn" style="text-decoration: none;">
+                <i></i> 查看我的订单
+            </a>
+            <a href="/userProfile.html" class="btn" style="text-decoration: none;">
+                <i></i> 管理个人信息
+            </a>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+        <h3 class="card-title">最新航班提醒</h3>
+        <div id="flightTips" style="margin-top: 10px;">
+            <!-- 动态加载最新航班 -->
+            <div style="text-align: center; color: #999;">加载中...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 加载最新航班提醒
+    fetch('/api/flights')
+        .then(res => res.json())
+        .then(data => {
+            if (data.code === 200 && data.data.length > 0) {
+                const flightTips = document.getElementById('flightTips');
+                flightTips.innerHTML = '';
+                // 取前3条航班
+                const top3Flights = data.data.slice(0, 3);
+                top3Flights.forEach(flight => {
+                    const flightItem = document.createElement('div');
+                    flightItem.style.padding = '10px 0';
+                    flightItem.style.borderBottom = '1px solid #eee';
+                    flightItem.innerHTML = `
+                            <span>${flight.flightId}</span> -
+                            <span>${flight.departureCity} → ${flight.arrivalCity}</span>
+                            <span style="color: #1a73e8;">¥${flight.price.toFixed(2)}</span>
+                            <span style="margin-left: 10px; font-size: 12px; color: #999;">
+                                剩余座位：${flight.seats}
+                            </span>
+                        `;
+                    flightTips.appendChild(flightItem);
+                });
+            } else {
+                document.getElementById('flightTips').innerHTML = '<div style="text-align: center; color: #999;">暂无航班信息</div>';
+            }
+        })
+        .catch(err => {
+            document.getElementById('flightTips').innerHTML = '<div style="text-align: center; color: #dc3545;">加载失败</div>';
+        });
+</script>
+</body>
+</html>

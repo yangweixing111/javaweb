@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户登录 - 航班管理系统</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="header">
+    <div class="container">
+        <a href="/" class="logo">航班管理系统</a>
+        <div class="nav">
+            <a href="/register.html">注册</a>
+            <a href="/adminlogin.html">管理员登录</a>
+        </div>
+    </div>
+</div>
+
+<div class="form-container">
+    <h2 class="form-title">用户登录</h2>
+    <div id="errorMsg" class="error" style="display: none;"></div>
+    <form id="loginForm" action="/api/login" method="post">
+        <div class="form-group">
+            <label for="username">用户名</label>
+            <input type="text" id="username" name="username" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="password">密码</label>
+            <input type="password" id="password" name="password" class="form-control" required>
+        </div>
+        <button type="submit" class="btn" style="width: 100%;">登录</button>
+    </form>
+    <p style="margin-top: 15px; text-align: center;">
+        还没有账号？<a href="/register.html">立即注册</a>
+    </p>
+</div>
+
+<script>
+    // 获取URL参数
+    function getUrlParam(name) {
+        const reg = new RegExp(`(^|&)${name}=([^&]*)(&|$)`);
+        const r = window.location.search.substr(1).match(reg);
+        if (r != null) return decodeURIComponent(r[2]);
+        return null;
+    }
+
+    // 页面加载显示错误信息
+    window.onload = function() {
+        const error = getUrlParam('error');
+        if (error) {
+            document.getElementById('errorMsg').textContent = error;
+            document.getElementById('errorMsg').style.display = 'block';
+        }
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>航班管理 - 航班管理系统</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="header">
+    <div class="container">
+        <a href="/adminHome.html" class="logo">航班管理系统</a>
+        <div class="nav">
+            <a href="/flight.html">航班管理</a>
+            <a href="/orderManage.html">订单管理</a>
+            <a href="/userInfoList.html">用户管理</a>
+            <a href="/logout.html">退出登录</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- 添加航班按钮 -->
+    <button class="btn" style="margin-top: 20px;" onclick="openAddModal()">添加新航班</button>
+
+    <div id="msg" class="msg" style="display: none; margin-top: 20px;"></div>
+    <div id="error" class="error" style="display: none; margin-top: 20px;"></div>
+
+    <div class="table-container" style="margin-top: 20px;">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>航班ID</th>
+                <th>出发城市</th>
+                <th>到达城市</th>
+                <th>出发时间</th>
+                <th>到达时间</th>
+                <th>座位数</th>
+                <th>价格(元)</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody id="flightTableBody">
+            <tr>
+                <td colspan="8" style="text-align: center; color: #999;">加载中...</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 添加/编辑航班弹窗 -->
+<div id="flightModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999;">
+    <div style="width: 500px; background: white; margin: 80px auto; padding: 30px; border-radius: 8px;">
+        <h3 id="modalTitle" style="margin-bottom: 20px; color: #1a73e8;">添加航班</h3>
+        <input type="hidden" id="modalType" value="add">
+        <input type="hidden" id="editFlightId">
+
+        <div class="form-group">
+            <label for="flightId">航班ID</label>
+            <input type="text" id="flightId" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="departureCity">出发城市</label>
+            <input type="text" id="departureCity" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="arrivalCity">到达城市</label>
+            <input type="text" id="arrivalCity" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="departureTime">出发时间</label>
+            <input type="datetime-local" id="departureTime" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="arrivalTime">到达时间</label>
+            <input type="datetime-local" id="arrivalTime" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="seats">座位数</label>
+            <input type="number" id="seats" class="form-control" min="0" required>
+        </div>
+        <div class="form-group">
+            <label for="price">价格</label>
+            <input type="number" id="price" class="form-control" min="0" step="0.01" required>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
+            <button class="btn btn-secondary" onclick="closeFlightModal()">取消</button>
+            <button class="btn" onclick="submitFlight()">保存</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 页面加载加载所有航班
+    window.onload = function() {
+        loadAllFlights();
+    }
+
+    // 加载所有航班
+    function loadAllFlights() {
+        fetch('/api/flights')
+            .then(res => res.json())
+            .then(data => {
+                const tableBody = document.getElementById('flightTableBody');
+                if (data.code === 200) {
+                    if (data.data.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #999;">暂无航班数据</td></tr>';
+                        return;
+                    }
+                    tableBody.innerHTML = '';
+                    data.data.forEach(flight => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                                <td>${flight.flightId}</td>
+                                <td>${flight.departureCity}</td>
+                                <td>${flight.arrivalCity}</td>
+                                <td>${new Date(flight.departureTime).toLocaleString()}</td>
+                                <td>${new Date(flight.arrivalTime).toLocaleString()}</td>
+                                <td>${flight.seats}</td>
+                                <td>${flight.price.toFixed(2)}</td>
+                                <td>
+                                    <button class="btn" style="padding: 5px 10px; font-size: 14px;" onclick="openEditModal('${JSON.stringify(flight)}')">编辑</button>
+                                    <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 14px; margin-left: 5px;" onclick="deleteFlight('${flight.flightId}')">删除</button>
+                                </td>
+                            `;
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #dc3545;">${data.message}</td></tr>`;
+                }
+            })
+            .catch(err => {
+                document.getElementById('flightTableBody').innerHTML = '<tr><td colspan="8" style="text-align: center; color: #dc3545;">加载失败，请重试</td></tr>';
+            });
+    }
+
+    // 打开添加航班弹窗
+    function openAddModal() {
+        document.getElementById('modalTitle').textContent = '添加航班';
+        document.getElementById('modalType').value = 'add';
+        // 清空表单
+        document.getElementById('flightId').value = '';
+        document.getElementById('departureCity').value = '';
+        document.getElementById('arrivalCity').value = '';
+        document.getElementById('departureTime').value = '';
+        document.getElementById('arrivalTime').value = '';
+        document.getElementById('seats').value = '';
+        document.getElementById('price').value = '';
+        // 显示弹窗
+        document.getElementById('flightModal').style.display = 'block';
+    }
+
+    // 打开编辑航班弹窗
+    function openEditModal(flightStr) {
+        const flight = JSON.parse(flightStr);
+        document.getElementById('modalTitle').textContent = '编辑航班';
+        document.getElementById('modalType').value = 'edit';
+        document.getElementById('editFlightId').value = flight.flightId;
+        // 填充表单
+        document.getElementById('flightId').value = flight.flightId;
+        document.getElementById('flightId').readOnly = true; // 航班ID不可修改
+        document.getElementById('departureCity').value = flight.departureCity;
+        document.getElementById('arrivalCity').value = flight.arrivalCity;
+        // 转换时间格式为datetime-local
+        const departureTime = new Date(flight.departureTime);
+        document.getElementById('departureTime').value = departureTime.toISOString().slice(0, 16);
+        const arrivalTime = new Date(flight.arrivalTime);
+        document.getElementById('arrivalTime').value = arrivalTime.toISOString().slice(0, 16);
+        document.getElementById('seats').value = flight.seats;
+        document.getElementById('price').value = flight.price;
+        // 显示弹窗
+        document.getElementById('flightModal').style.display = 'block';
+    }
+
+    // 关闭弹窗
+    function closeFlightModal() {
+        document.getElementById('flightModal').style.display = 'none';
+        // 恢复航班ID可编辑
+        document.getElementById('flightId').readOnly = false;
+    }
+
+    // 提交航班（添加/编辑）
+    function submitFlight() {
+        const modalType = document.getElementById('modalType').value;
+        const flightData = {
+            flightId: document.getElementById('flightId').value,
+            departureCity: document.getElementById('departureCity').value,
+            arrivalCity: document.getElementById('arrivalCity').value,
+            departureTime: new Date(document.getElementById('departureTime').value).toISOString(),
+            arrivalTime: new Date(document.getElementById('arrivalTime').value).toISOString(),
+            seats: parseInt(document.getElementById('seats').value),
+            price: parseFloat(document.getElementById('price').value)
+        };
+
+        // 验证
+        if (!flightData.flightId || !flightData.departureCity || !flightData.arrivalCity || !flightData.departureTime || !flightData.arrivalTime || !flightData.seats || !flightData.price) {
+            alert('请填写所有必填字段');
+            return;
+        }
+
+        const url = modalType === 'add' ? '/api/flights' : `/api/flights/${flightData.flightId}`;
+        const method = modalType === 'add' ? 'POST' : 'PUT';
+
+        fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(flightData)
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 200) {
+                    document.getElementById('msg').textContent = data.message;
+                    document.getElementById('msg').style.display = 'block';
+                    document.getElementById('error').style.display = 'none';
+                    closeFlightModal();
+                    loadAllFlights();
+                    setTimeout(() => document.getElementById('msg').style.display = 'none', 3000);
+                } else {
+                    document.getElementById('error').textContent = data.message;
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('msg').style.display = 'none';
+                }
+            })
+            .catch(err => {
+                document.getElementById('error').textContent = '操作失败，请重试';
+                document.getElementById('error').style.display = 'block';
+            });
+    }
+
+    // 删除航班
+    function deleteFlight(flightId) {
+        if (!confirm(`确定要删除航班 ${flightId} 吗？`)) {
+            return;
+        }
+
+        fetch(`/api/flights/${flightId}`, {
+            method: 'DELETE'
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 200) {
+                    document.getElementById('msg').textContent = data.message;
+                    document.getElementById('msg').style.display = 'block';
+                    document.getElementById('error').style.display = 'none';
+                    loadAllFlights();
+                    setTimeout(() => document.getElementById('msg').style.display = 'none', 3000);
+                } else {
+                    document.getElementById('error').textContent = data.message;
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('msg').style.display = 'none';
+                }
+            })
+            .catch(err => {
+                document.getElementById('error').textContent = '删除失败，请重试';
+                document.getElementById('error').style.display = 'block';
+            });
+    }
+</script>
+</body>
+</html>

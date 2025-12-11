@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>航班查询 - 航班管理系统</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="header">
+    <div class="container">
+        <a href="/userHome.html" class="logo">航班管理系统</a>
+        <div class="nav">
+            <a href="/BookHome.html">查询航班</a>
+            <a href="/userOrders.html">我的订单</a>
+            <a href="/userProfile.html">个人中心</a>
+            <a href="/logout.html">退出登录</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <h2 class="card-title">航班查询</h2>
+        <form id="searchForm" onsubmit="searchFlights(event)" style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <div class="form-group" style="flex: 1; min-width: 200px;">
+                <label for="keyword">出发/到达城市</label>
+                <input type="text" id="keyword" name="keyword" class="form-control" placeholder="例如：北京、上海">
+            </div>
+            <div class="form-group" style="align-self: flex-end; margin-bottom: 20px;">
+                <button type="submit" class="btn">搜索航班</button>
+                <button type="button" class="btn btn-secondary" style="margin-left: 10px;" onclick="resetSearch()">重置</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="msg" class="msg" style="display: none; margin-top: 20px;"></div>
+    <div id="error" class="error" style="display: none; margin-top: 20px;"></div>
+
+    <div class="table-container" style="margin-top: 20px;">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>航班ID</th>
+                <th>出发城市</th>
+                <th>到达城市</th>
+                <th>出发时间</th>
+                <th>到达时间</th>
+                <th>剩余座位</th>
+                <th>价格(元)</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody id="flightTableBody">
+            <tr>
+                <td colspan="8" style="text-align: center; color: #999;">请输入关键词搜索航班</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 预订航班弹窗 -->
+<div id="bookModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999;">
+    <div style="width: 400px; background: white; margin: 100px auto; padding: 30px; border-radius: 8px;">
+        <h3 style="margin-bottom: 20px; color: #1a73e8;">预订航班</h3>
+        <input type="hidden" id="flightIdInput">
+        <div class="form-group">
+            <label>航班ID</label>
+            <input type="text" id="flightIdShow" class="form-control" disabled>
+        </div>
+        <div class="form-group">
+            <label>购票数量</label>
+            <input type="number" id="seatCount" class="form-control" min="1" value="1">
+        </div>
+        <div class="form-group">
+            <label>用户名</label>
+            <input type="text" id="username" class="form-control" placeholder="请输入登录用户名">
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
+            <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+            <button class="btn" onclick="submitOrder()">确认预订</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 加载全部航班
+    window.onload = function() {
+        loadFlights('');
+    }
+
+    // 搜索航班
+    function searchFlights(e) {
+        e.preventDefault();
+        const keyword = document.getElementById('keyword').value.trim();
+        loadFlights(keyword);
+    }
+
+    // 重置搜索
+    function resetSearch() {
+        document.getElementById('keyword').value = '';
+        loadFlights('');
+    }
+
+    // 加载航班数据
+    function loadFlights(keyword) {
+        const url = keyword ? `/api/flights/search?keyword=${keyword}` : '/api/flights';
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                const tableBody = document.getElementById('flightTableBody');
+                if (data.code === 200) {
+                    if (data.data.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #999;">暂无匹配航班</td></tr>';
+                        return;
+                    }
+                    tableBody.innerHTML = '';
+                    data.data.forEach(flight => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                                <td>${flight.flightId}</td>
+                                <td>${flight.departureCity}</td>
+                                <td>${flight.arrivalCity}</td>
+                                <td>${new Date(flight.departureTime).toLocaleString()}</td>
+                                <td>${new Date(flight.arrivalTime).toLocaleString()}</td>
+                                <td>${flight.seats}</td>
+                                <td>${flight.price.toFixed(2)}</td>
+                                <td>
+                                    <button class="btn" onclick="openBookModal('${flight.flightId}')" ${flight.seats <= 0 ? 'disabled style="background: #999; cursor: not-allowed;"' : ''}>
+                                        ${flight.seats <= 0 ? '无票' : '预订'}
+                                    </button>
+                                </td>
+                            `;
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #dc3545;">${data.message}</td></tr>`;
+                }
+            })
+            .catch(err => {
+                document.getElementById('flightTableBody').innerHTML = '<tr><td colspan="8" style="text-align: center; color: #dc3545;">加载失败，请重试</td></tr>';
+            });
+    }
+
+    // 打开预订弹窗
+    function openBookModal(flightId) {
+        document.getElementById('flightIdInput').value = flightId;
+        document.getElementById('flightIdShow').value = flightId;
+        document.getElementById('bookModal').style.display = 'block';
+    }
+
+    // 关闭弹窗
+    function closeModal() {
+        document.getElementById('bookModal').style.display = 'none';
+    }
+
+    // 提交预订订单
+    function submitOrder() {
+        const flightId = document.getElementById('flightIdInput').value;
+        const seatCount = parseInt(document.getElementById('seatCount').value);
+        const username = document.getElementById('username').value.trim();
+
+        if (!username) {
+            alert('请输入用户名');
+            return;
+        }
+
+        const orderDTO = {
+            flightId: flightId,
+            seatCount: seatCount,
+            username: username
+        };
+
+        fetch('/api/order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(orderDTO)
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 200) {
+                    document.getElementById('msg').textContent = data.message;
+                    document.getElementById('msg').style.display = 'block';
+                    document.getElementById('error').style.display = 'none';
+                    closeModal();
+                    // 刷新航班列表
+                    loadFlights(document.getElementById('keyword').value.trim());
+                    // 3秒后隐藏提示
+                    setTimeout(() => document.getElementById('msg').style.display = 'none', 3000);
+                } else {
+                    document.getElementById('error').textContent = data.message;
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('msg').style.display = 'none';
+                }
+            })
+            .catch(err => {
+                document.getElementById('error').textContent = '预订失败，请重试';
+                document.getElementById('error').style.display = 'block';
+            });
+    }
+</script>
+</body>
+</html>

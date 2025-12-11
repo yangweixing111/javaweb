@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的订单 - 航班管理系统</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="header">
+    <div class="container">
+        <a href="/userHome.html" class="logo">航班管理系统</a>
+        <div class="nav">
+            <a href="/BookHome.html">查询航班</a>
+            <a href="/userOrders.html">我的订单</a>
+            <a href="/userProfile.html">个人中心</a>
+            <a href="/logout.html">退出登录</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <h2 class="card-title">我的订单</h2>
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label for="username">查询用户名</label>
+            <input type="text" id="username" class="form-control" style="width: 300px;" placeholder="请输入用户名">
+            <button class="btn" style="margin-top: 10px;" onclick="loadOrders()">查询我的订单</button>
+        </div>
+    </div>
+
+    <div id="msg" class="msg" style="display: none; margin-top: 20px;"></div>
+    <div id="error" class="error" style="display: none; margin-top: 20px;"></div>
+
+    <div class="table-container" style="margin-top: 20px;">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>订单ID</th>
+                <th>航班ID</th>
+                <th>购票数量</th>
+                <th>总金额(元)</th>
+                <th>下单时间</th>
+                <th>订单状态</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody id="orderTableBody">
+            <tr>
+                <td colspan="7" style="text-align: center; color: #999;">请输入用户名查询订单</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // 加载订单
+    function loadOrders() {
+        const username = document.getElementById('username').value.trim();
+        if (!username) {
+            alert('请输入用户名');
+            return;
+        }
+
+        fetch(`/api/order/user/${username}`)
+            .then(res => res.json())
+            .then(data => {
+                const tableBody = document.getElementById('orderTableBody');
+                if (data.code === 200) {
+                    if (data.data.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #999;">暂无订单记录</td></tr>';
+                        return;
+                    }
+                    tableBody.innerHTML = '';
+                    data.data.forEach(order => {
+                        const row = document.createElement('tr');
+                        // 状态文本映射
+                        const statusText = {
+                            0: '待支付',
+                            1: '已支付',
+                            2: '已取消'
+                        }[order.status] || '未知状态';
+
+                        row.innerHTML = `
+                                <td>${order.orderId}</td>
+                                <td>${order.flightId}</td>
+                                <td>${order.seatCount}</td>
+                                <td>${order.totalPrice.toFixed(2)}</td>
+                                <td>${new Date(order.createTime).toLocaleString()}</td>
+                                <td>${statusText}</td>
+                                <td>
+                                    ${order.status === 0 ?
+                            `<button class="btn" onclick="cancelOrder(${order.orderId})">取消订单</button>` :
+                            `<span style="color: #999;">无法操作</span>`
+                        }
+                                </td>
+                            `;
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #dc3545;">${data.message}</td></tr>`;
+                }
+            })
+            .catch(err => {
+                document.getElementById('orderTableBody').innerHTML = '<tr><td colspan="7" style="text-align: center; color: #dc3545;">加载失败，请重试</td></tr>';
+            });
+    }
+
+    // 取消订单
+    function cancelOrder(orderId) {
+        if (!confirm('确定要取消该订单吗？')) {
+            return;
+        }
+
+        fetch(`/api/order/cancel/${orderId}`, {
+            method: 'PUT'
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 200) {
+                    document.getElementById('msg').textContent = data.message;
+                    document.getElementById('msg').style.display = 'block';
+                    document.getElementById('error').style.display = 'none';
+                    // 刷新订单列表
+                    loadOrders();
+                    setTimeout(() => document.getElementById('msg').style.display = 'none', 3000);
+                } else {
+                    document.getElementById('error').textContent = data.message;
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('msg').style.display = 'none';
+                }
+            })
+            .catch(err => {
+                document.getElementById('error').textContent = '取消失败，请重试';
+                document.getElementById('error').style.display = 'block';
+            });
+    }
+</script>
+</body>
+</html>
